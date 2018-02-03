@@ -34,13 +34,67 @@ app.get('/goods', function(req,res) {
     });
 });
 
-//查询商品I
+//查询商品ID
+app.get('/good/:id',function(req, res) {
+    var query = "select * from ?? where ?? = ?";
+    var table = ["goods","id",req.params.id];
+    query = mysql.format(query,table);
+    conn.query(query, function(err, rows) {
+        if(err) {
+            res.json({ error: true, message: "执行MySQL查询时出错" });
+        } else if(rows.length != 0){
+            res.json({ error: false, message: "成功", "data": rows });
+        } else {
+            res.json({ error: false, message: "无数据...."});
+        }
+    })
+});
+
 //创建一个商品
 app.post('/good', function(req, res) {
     var title = req.body.title;
     var price = req.body.price;
-    conn.query("insert into goods (title, price) values(?,?)",[title,price],function(err, rows) {
-        res.json({status: true});
+    var query = "insert into ??(??, ??) values(?,?)";
+    var table = ["goods", "title", "price", title, price];
+    query = mysql.format(query,table);
+    conn.query(query,function(err, rows) {
+        if (err) {
+            res.json({ error: true, message: "执行MySQL查询时出错"});
+        } else {
+            res.json({ error: false, message: "成功创建商品" });
+        }
+    });
+});
+
+//更新一个商品
+app.put('/good/:id', function (req, res) {
+    var id = req.params.id;
+    var title = req.body.title;
+    var price = req.body.price;
+    var query = "update ?? set ?? = ?,?? = ? where ?? = ?";
+    var table = ["goods", "title", title, "price", price, "id", id];
+    query = mysql.format(query, table);
+    conn.query(query, function (err, rows) {
+        if (err) {
+            res.json({ error: true, message: "执行MySQL查询时出错" });
+        } else {
+            res.json({ error: false, message: "更新一个商品ID：" + id });
+        }
+    });
+});
+
+//删除一个商品
+app.delete("/good/:id", function (req, res) {
+    var id = req.params.id;
+    var query = "delete from ?? where ?? = ?";
+    var table = ["goods", "id", id];
+    query = mysql.format(query, table);
+    conn.query(query, function (err, rows) {
+        if (err) {
+            res.json({ error: true, message: "执行MySQL查询时出错" });
+        } else {
+            res.json({ error: false, message: "成功删除一个商品ID：" + id });
+        }
     });
 });
 
