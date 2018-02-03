@@ -34,6 +34,16 @@ app.get('/goods', function(req,res) {
     });
 });
 
+//查询商品I
+//创建一个商品
+app.post('/good', function(req, res) {
+    var title = req.body.title;
+    var price = req.body.price;
+    conn.query("insert into goods (title, price) values(?,?)",[title,price],function(err, rows) {
+        res.json({status: true});
+    });
+});
+
 app.listen(3000, function () {
     console.log("✔ Express server listening on port " + port);
 });
