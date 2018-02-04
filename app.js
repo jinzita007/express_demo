@@ -1,10 +1,10 @@
-var express = require("express");
-var mysql = require("mysql");
-var bodyParser = require("body-parser");
-var Promise = require("bluebird");
-var app = express();
+const express = require("express");
+const mysql = require("mysql");
+const bodyParser = require("body-parser");
+const Promise = require("bluebird");
+const app = express();
 
-var port = process.env.PORT || 8080; 
+const port = process.env.PORT || 8080; 
 
 //连接mysql数据库
 const connection = mysql.createConnection({
@@ -15,6 +15,11 @@ const connection = mysql.createConnection({
 });
 
 const queryAsync = Promise.promisify(connection.query.bind(connection));
+connection.connect();
+
+//当应用程序关闭时做些事情
+process.stdin.resume()
+process.on('exit', exitHandler.bind(null, { shutdownDb: true }));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // Body解析器使用JSON数据
@@ -41,7 +46,8 @@ app.get('/goods', (req, res) => {
 //获取商品列表分页
 app.get('/good', (req, res) => {
     var total;
-    var pageNum = parseInt(req.query.pageNum,10) || 1; // 页码
+    var queryPagination;
+    var pageNum = parseInt(req.query.pageNum,10) || 1; // 每页码
     var page = parseInt(req.query.page,10) || 0; // 默认页数
     var numPages;
     var skip = page * pageNum;
@@ -64,10 +70,20 @@ app.get('/good', (req, res) => {
     })
         .then(() => queryAsync("SELECT * FROM goods LIMIT " + limit))
         .then(results => {
-            var responsePayload = {
+            var data = {
                 results: results
             };
-            res.json(responsePayload);
+            if(page > numPages) {
+                data.pagination = {
+                    current: page,        //当前页
+                    perPage: pageNum,  //每页码
+                    prev: page > 0 ? page - 1 : undefined,
+                    next: page < numPages - 1 ? page + 1: undefined
+                }
+            } else {
+                err: "查询页面"+ page +"是 >= 最大页面号" + numPages
+            }
+            res.json(data);
         })
         .catch(err => {
             console.error(err);
@@ -77,7 +93,7 @@ app.get('/good', (req, res) => {
 });
 
 //查询商品ID
-app.get('/good/:id',function(req, res) {
+app.get('/good/:id', (req, res) => {
     var query = "select * from ?? where ?? = ?";
     var table = ["goods","id",req.params.id];
     query = mysql.format(query,table);
@@ -93,7 +109,7 @@ app.get('/good/:id',function(req, res) {
 });
 
 //创建一个商品
-app.post('/good', function(req, res) {
+app.post('/good', (req, res) => {
     var title = req.body.title;
     var price = req.body.price;
     var query = "insert into ??(??, ??) values(?,?)";
@@ -109,7 +125,7 @@ app.post('/good', function(req, res) {
 });
 
 //更新一个商品
-app.put('/good/:id', function (req, res) {
+app.put('/good/:id', (req, res) => {
     var id = req.params.id;
     var title = req.body.title;
     var price = req.body.price;
@@ -126,7 +142,7 @@ app.put('/good/:id', function (req, res) {
 });
 
 //删除一个商品
-app.delete("/good/:id", function (req, res) {
+app.delete("/good/:id", (req, res) => {
     var id = req.params.id;
     var query = "delete from ?? where ?? = ?";
     var table = ["goods", "id", id];
@@ -140,7 +156,15 @@ app.delete("/good/:id", function (req, res) {
     });
 });
 
-app.listen(8080, function () {
+app.listen(8080, () => {
     console.log("✔ Express server listening on port " + port);
 });
 
+function exitHandler(options, err) {
+  if (options.shutdownDb) {
+    console.log('shutdown mysql connection');
+    connection.end();
+  }
+  if (err) console.log(err.stack);
+  if (options.exit) process.exit();
+}
