@@ -43,15 +43,15 @@ app.get('/goods', (req, res) => {
     });
 });
 
-//获取商品列表分页
+//获取商品列表分页 + 模糊查询
 app.get('/good', (req, res) => {
-    var total;
+    var total;  //总页数
     var queryPagination;
     var pageNum = parseInt(req.query.pageNum, 10) || 1; // 每页码
     var page = parseInt(req.query.page, 10) || 0; // 默认页数
-    var numPages;
+    var numPages; 
     var skip = page * pageNum;
-    var search = req.query.search;
+    var search = req.query.search;  //查询
   
   
     console.log(req.query);
@@ -62,9 +62,9 @@ app.get('/good', (req, res) => {
 
     var end = pageNum;
     var limit = skip + ',' + end;
-
     console.log(limit);
-    console.log("SELECT * FROM goods DESC LIMIT " + limit);
+    console.log("SELECT * FROM goods LIMIT " + limit);
+
     if(search) {
        queryAsync("SELECT * FROM goods WHERE title like '%" + search + "%' LIMIT " + limit)
             .then(results => {
@@ -96,7 +96,7 @@ app.get('/good', (req, res) => {
                         next: page < numPages - 1 ? page + 1 : undefined
                     }
                 } else {
-                    err: "查询页面" + page + "是 >= 最大页面号" + numPages
+                    err: "查询页面" + page + "是 >= 最大页数" + numPages
                 }
 
                 res.json(data);
@@ -108,7 +108,6 @@ app.get('/good', (req, res) => {
             });
     }
     
-
 });
 
 //查询商品ID
