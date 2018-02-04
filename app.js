@@ -5,6 +5,7 @@ var app = express();
 
 var port = process.env.PORT || 8080; 
 
+//连接mysql数据库
 var conn = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -32,6 +33,22 @@ app.get('/goods', function(req,res) {
             res.json(data);
         }
     });
+});
+
+//获取商品列表分页
+app.get('/good', function(req, res) {
+    var param = req.query || req.params;
+    var pageNum = parseInt(param.pageNum || 1);// 页码
+    var end = parseInt(param.pageSize || 3); // 默认页数
+    var start = (pageNum - 1) * end;
+    var query = "select * from ?? limit ?,?";
+    var table = ["goods", start, end];
+    query = mysql.format(query, table);
+    conn.query(query, function (err, rows, fields) {
+        if (err)
+        throw err;
+        res.json(rows)
+    });   
 });
 
 //查询商品ID
@@ -98,7 +115,7 @@ app.delete("/good/:id", function (req, res) {
     });
 });
 
-app.listen(3000, function () {
+app.listen(8080, function () {
     console.log("✔ Express server listening on port " + port);
 });
 
