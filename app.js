@@ -49,30 +49,35 @@ app.get('/good', (req, res) => {
     var queryPagination;
     var pageNum = parseInt(req.query.pageNum, 10) || 1; // 每页码
     var page = parseInt(req.query.page, 10) || 0; // 默认页数
-    var numPages; 
+    var numPages;
     var skip = page * pageNum;
     var search = req.query.search;  //查询
-  
-  
-    console.log(req.query);
-    console.log(page);
-    console.log(pageNum);
-    console.log(skip);
-    console.log(search);
+
+    //console.log(req.query);
+    //console.log(page);
+    //console.log(pageNum);
+    //console.log(skip);
+    //console.log(search);
 
     var end = pageNum;
     var limit = skip + ',' + end;
-    console.log(limit);
-    console.log("SELECT * FROM goods LIMIT " + limit);
+    //console.log(limit);
+    //console.log("SELECT * FROM goods LIMIT " + limit);
 
-    if(search) {
-       queryAsync("SELECT * FROM goods WHERE title like '%" + search + "%' LIMIT " + limit)
-            .then(results => {
-                var data = {
-                    results: results
-                };
-                res.json(data);
+    if (search != null) {
+        queryAsync("select count(*) as total from goods where title like '%" + search + "%'")
+            .then((results) => {
+                if (results[0]) {
+                    total = results[0].total;
+                }
             })
+            .then(() => queryAsync("select * from goods where title like '%" + search + "%' LIMIT " + limit))
+            .then(results => {
+                res.json({
+                    "goods": results,
+                    "total": total
+                });
+            });
     } else {
         queryAsync("select count(*) as total from goods")
             .then(results => {
@@ -80,7 +85,6 @@ app.get('/good', (req, res) => {
                 numPages = Math.ceil(total / page);
                 console.log('number of pages:', numPages);
             })
-
             .then(() => queryAsync("SELECT * FROM goods LIMIT " + limit))
             .then(results => {
                 var data = {
@@ -107,7 +111,7 @@ app.get('/good', (req, res) => {
                 res.json({ err: err });
             });
     }
-    
+
 });
 
 //查询商品ID
