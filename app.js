@@ -73,10 +73,17 @@ app.get('/good', (req, res) => {
             })
             .then(() => queryAsync("select * from goods where title like '%" + search + "%' LIMIT " + limit))
             .then(results => {
-                res.json({
-                    "goods": results,
-                    "total": total
-                });
+                if (results.length != 0) {
+                    res.json({
+                        "goods": results,
+                        "total": total
+                    });
+                } else {
+                    res.json({
+                        "message": "无数据..."
+                    });
+                }
+                
             });
     } else {
         queryAsync("select count(*) as total from goods")
